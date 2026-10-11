@@ -232,9 +232,6 @@
 /* ===== 沙漏 Logo ===== */
 .hg-sand {
   fill: var(--sand);
-  transition:
-    y 0.9s linear,
-    height 0.9s linear;
 }
 
 .hg-stream {
