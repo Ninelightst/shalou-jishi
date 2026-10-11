@@ -260,6 +260,13 @@
   animation: float 4s ease-in-out infinite;
 }
 
+.version-badge {
+  margin-top: -8px;
+  font-size: 12px;
+  color: var(--text-2);
+  letter-spacing: 0.5px;
+}
+
 @keyframes float {
   0%,
   100% {
