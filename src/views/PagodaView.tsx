@@ -78,6 +78,20 @@ export function PagodaView() {
     timer.start(cat.id, chosen)
   }
 
+  // 删除自定义分类：历史记录保留（显示/统计归入「其他」），并复位受影响的选中状态
+  function removeCategory(id: string) {
+    if (!window.confirm('删除该分类？已有记录仍会保留，但会归入「其他」。')) return
+    const next = cats.filter((c) => c.id !== id)
+    update({ categories: next })
+    if (filterCat === id) setFilterCat('all')
+    if (categoryId === id) {
+      const first = next[0]
+      setCategoryId(first?.id ?? 'work')
+      if (first) localStorage.setItem(LAST_CAT_KEY, first.id)
+      else localStorage.removeItem(LAST_CAT_KEY)
+    }
+  }
+
   // —— 日程 ——
   const [selectedDate, setSelectedDate] = useState(() => todayStr())
   const [filterCat, setFilterCat] = useState('all')
@@ -292,6 +306,20 @@ export function PagodaView() {
           >
             <span className="dot" style={{ background: c.color }} />
             {c.name}
+            {c.id.startsWith('c') && cats.length > 1 && (
+              <span
+                className="chip-x"
+                role="button"
+                aria-label={`删除分类${c.name}`}
+                title="删除该分类"
+                onClick={(ev) => {
+                  ev.stopPropagation()
+                  removeCategory(c.id)
+                }}
+              >
+                ×
+              </span>
+            )}
           </button>
         ))}
       </div>
