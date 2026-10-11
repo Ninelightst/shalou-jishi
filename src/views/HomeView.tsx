@@ -47,15 +47,15 @@ export function HomeView({
 
   return (
     <div>
-      <div className="page-head">
+      <div className="page-head home-head">
         <h1 className="page-title">
           {greeting()}，{dateLabel(t)} · 周{weekdayCN(t)}
         </h1>
+        <div className="version-badge">v1.6</div>
       </div>
 
       <div className="home-hero">
         <HourglassLogo size={132} progress={(now % 60000) / 60000} className="hero-logo" />
-        <div className="version-badge">v1.6</div>
       </div>
 
       {active && (
