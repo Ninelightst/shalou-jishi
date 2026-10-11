@@ -106,7 +106,7 @@ function Shell() {
     <div className="app">
       <aside className="sidebar">
         <div className="sidebar-brand">
-          <HourglassLogo size={40} progress={0.4} />
+          <HourglassLogo size={40} progress={0} />
           <span>沙漏记事</span>
         </div>
         <nav className="side-nav">
