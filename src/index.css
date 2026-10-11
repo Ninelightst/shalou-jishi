@@ -41,6 +41,7 @@ body,
 html {
   /* 下拉/回弹露出区域与页面背景一致，避免频闪 */
   background: var(--bg);
+  overscroll-behavior-y: none;
 }
 
 body {

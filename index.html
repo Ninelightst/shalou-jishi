@@ -4,6 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#F7F5F0" />
+    <style>
+      /* 首帧关键样式：任何情况下先按当前主题画出背景，杜绝刷新闪屏/黑条 */
+      :root {
+        --bg: #f7f5f0;
+      }
+      [data-theme='dark'] {
+        --bg: #1c1d26;
+      }
+      html,
+      body {
+        margin: 0;
+        background: var(--bg);
+      }
+    </style>
     <script>
       // 首帧前同步主题，避免深色模式下白屏闪烁
       try {

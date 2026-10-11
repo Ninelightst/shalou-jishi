@@ -22,14 +22,32 @@ const NAV: { id: ViewId; label: string; icon: ReactNode }[] = [
   { id: 'desert', label: '沙漠', icon: <TreeIcon /> },
 ]
 
+// 轻量 hash 路由：刷新后停留在当前页面（#/pagoda 等）
+function viewFromHash(): ViewId {
+  const h = location.hash.replace(/^#\/?/, '')
+  return (NAV.some((n) => n.id === h) ? h : 'home') as ViewId
+}
+
 function Shell() {
   const { settings } = useSettings()
-  const [view, setView] = useState<ViewId>('home')
+  const [view, setView] = useState<ViewId>(viewFromHash)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [dayKey, setDayKey] = useState(0)
   const [autoToast, setAutoToast] = useState('')
   const lastDayRef = useRef(todayStr())
   const autoToastTimer = useRef<number | undefined>(undefined)
+
+  // 视图切换同步到 hash（可刷新保持、支持返回键），hash 变化同步回视图
+  const go = (v: ViewId) => {
+    setView(v)
+    const target = `#/${v}`
+    if (location.hash !== target) location.hash = target
+  }
+  useEffect(() => {
+    const onHash = () => setView(viewFromHash())
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
 
   // 主题：同步根节点属性与 Android 窗口主题色（避免下拉时露出黑色背景）
   useEffect(() => {
@@ -97,7 +115,7 @@ function Shell() {
               key={n.id}
               type="button"
               className={`side-item ${view === n.id ? 'active' : ''}`}
-              onClick={() => setView(n.id)}
+              onClick={() => go(n.id)}
             >
               {n.icon}
               {n.label}
@@ -112,7 +130,7 @@ function Shell() {
       </aside>
 
       <main className="main" key={dayKey}>
-        {view === 'home' && <HomeView onNavigate={setView} onOpenSettings={() => setSettingsOpen(true)} />}
+        {view === 'home' && <HomeView onNavigate={go} onOpenSettings={() => setSettingsOpen(true)} />}
         {view === 'pagoda' && <PagodaView />}
         {view === 'report' && <ReportView />}
         {view === 'desert' && <DesertView onOpenSettings={() => setSettingsOpen(true)} />}
@@ -124,7 +142,7 @@ function Shell() {
             key={n.id}
             type="button"
             className={`nav-item ${view === n.id ? 'active' : ''}`}
-            onClick={() => setView(n.id)}
+            onClick={() => go(n.id)}
           >
             {n.icon}
             <span>{n.label}</span>
