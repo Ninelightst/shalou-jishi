@@ -1,4 +1,5 @@
 import type { Tree } from '../types'
+import { weatherKind, type WeatherNow } from '../utils/weather'
 
 // 沙漠景观随倒沙量演进的阶段
 export function desertStage(sandPoured: number) {
@@ -9,6 +10,37 @@ export function desertStage(sandPoured: number) {
   if (sandPoured >= 10)
     return { name: '半荒漠', sky: ['#EFE7CB', '#F8E3B8'], duneFar: '#DFC27E', duneNear: '#CFB06C', grass: 4, pond: false }
   return { name: '荒漠', sky: ['#F7E8C9', '#F2D9A4'], duneFar: '#E9C87E', duneNear: '#DDB46A', grass: 0, pond: false }
+}
+
+// 时段：拂晓/白昼/黄昏/夜晚
+export type TimeOfDay = 'dawn' | 'day' | 'dusk' | 'night'
+
+export function timeOfDay(hour: number): TimeOfDay {
+  if (hour >= 5 && hour < 7) return 'dawn'
+  if (hour >= 7 && hour < 17) return 'day'
+  if (hour >= 17 && hour < 19) return 'dusk'
+  return 'night'
+}
+
+// 天体弧线位置：t 0~1（东→西），y 越高越接近天顶
+function arcPos(t: number): { x: number; y: number } {
+  return { x: 90 + 540 * t, y: 96 - 58 * Math.sin(Math.PI * t) }
+}
+
+// 太阳/月亮位置
+export function sunPos(hour: number) {
+  if (hour >= 6 && hour <= 18) return arcPos((hour - 6) / 12)
+  return null
+}
+export function moonPos(hour: number) {
+  if (hour >= 19 || hour < 6) return arcPos(((hour + 5) % 24) / 12)
+  return null
+}
+
+// 确定性伪随机（星空与雨滴布局不随刷新跳动）
+function prand(i: number, salt: number) {
+  const x = Math.sin(i * 127.1 + salt * 311.7) * 43758.5453
+  return x - Math.floor(x)
 }
 
 function SaplingShape() {
@@ -36,10 +68,14 @@ export function DesertScene({
   sandPoured,
   moisture,
   trees,
+  hour,
+  weather,
 }: {
   sandPoured: number
   moisture: number
   trees: Tree[]
+  hour: number
+  weather?: WeatherNow | null
 }) {
   const st = desertStage(sandPoured)
   const grown = trees.filter((t) => t.stage === 'tree').length
@@ -47,6 +83,25 @@ export function DesertScene({
 
   const positions = trees.map((_, i) => 130 + (i * 460) / Math.max(1, trees.length - 1))
   if (trees.length === 1) positions[0] = 360
+
+  const tod = timeOfDay(hour)
+  const sun = sunPos(hour)
+  const moon = moonPos(hour)
+  const kind = weather ? weatherKind(weather.code) : 'sunny'
+
+  // 时段色调（叠加在阶段天空之上）
+  const tint =
+    tod === 'night'
+      ? { fill: '#141A3C', opacity: 0.55 }
+      : tod === 'dawn'
+        ? { fill: '#FF9A5A', opacity: 0.24 }
+        : tod === 'dusk'
+          ? { fill: '#C96A4A', opacity: 0.28 }
+          : null
+
+  // 天气压暗
+  const dim =
+    kind === 'overcast' || kind === 'rain' || kind === 'snow' || kind === 'storm' || kind === 'fog' ? 0.16 : 0
 
   return (
     <svg viewBox="0 0 720 400" preserveAspectRatio="xMidYMid slice" className="desert-svg" role="img" aria-label="沙漠景观">
@@ -57,7 +112,43 @@ export function DesertScene({
         </linearGradient>
       </defs>
       <rect width="720" height="400" fill="url(#ds-sky)" />
-      <circle cx="600" cy="70" r="38" fill="#F5C860" opacity="0.9" />
+      {/* 时段色调 */}
+      {tint && <rect width="720" height="400" fill={tint.fill} opacity={tint.opacity} />}
+
+      {/* 星空（夜晚） */}
+      {tod === 'night' &&
+        Array.from({ length: 26 }).map((_, i) => {
+          const x = 20 + prand(i, 7) * 680
+          const y = 8 + prand(i, 13) * 160
+          const r = 0.8 + prand(i, 29) * 1.6
+          return (
+            <circle key={i} cx={x} cy={y} r={r} fill="#F5F2E8" className="star" style={{ animationDelay: `${prand(i, 31) * 3}s` }} />
+          )
+        })}
+
+      {/* 太阳 / 月亮 */}
+      {sun && <circle cx={sun.x} cy={sun.y} r="30" fill="#F5C860" opacity={tod === 'dawn' || tod === 'dusk' ? 0.75 : 0.92} />}
+      {moon && (
+        <g transform={`translate(${moon.x}, ${moon.y})`} opacity="0.92">
+          <circle r="24" fill="#F0EDDA" />
+          <circle cx="-9" cy="-6" r="20" fill={tint?.fill ?? '#141A3C'} />
+        </g>
+      )}
+
+      {/* 云层（多云/阴/雨/雪/雷） */}
+      {(kind === 'partly' || kind === 'overcast' || kind === 'rain' || kind === 'snow' || kind === 'storm') &&
+        [0, 1, 2, 3].map((i) => (
+          <g
+            key={i}
+            className="cloud"
+            style={{ animationDelay: `${i * -8}s`, animationDuration: `${28 + i * 6}s` }}
+            opacity={kind === 'partly' ? 0.5 : 0.75}
+          >
+            <ellipse cx={140 + i * 180} cy={70 + (i % 2) * 46} rx={54 + (i % 3) * 12} ry={16} fill="#FFFFFF" />
+            <ellipse cx={170 + i * 180} cy={62 + (i % 2) * 46} rx={38} ry={14} fill="#FFFFFF" />
+          </g>
+        ))}
+
       {/* 远景沙丘 */}
       <path d="M0 260 Q 180 200 380 250 T 720 245 L720 400 L0 400 Z" fill={st.duneFar} />
       {/* 近景沙丘 */}
@@ -94,6 +185,65 @@ export function DesertScene({
           <g className="desert-tree">{t.stage === 'sapling' ? <SaplingShape /> : <TreeShape />}</g>
         </g>
       ))}
+
+      {/* 天气压暗 */}
+      {dim > 0 && <rect width="720" height="400" fill="#3D4757" opacity={dim} />}
+
+      {/* 雨 */}
+      {(kind === 'rain' || kind === 'storm') &&
+        Array.from({ length: 14 }).map((_, i) => {
+          const x = prand(i, 3) * 720
+          const y = prand(i, 17) * 400
+          return (
+            <line
+              key={i}
+              className="rain-drop"
+              style={{ animationDelay: `${prand(i, 23) * 1.1}s`, animationDuration: `${0.8 + prand(i, 41) * 0.5}s` }}
+              x1={x}
+              y1={y}
+              x2={x - 5}
+              y2={y + 16}
+              stroke="#BBD3EA"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              opacity="0.65"
+            />
+          )
+        })}
+
+      {/* 雪 */}
+      {kind === 'snow' &&
+        Array.from({ length: 16 }).map((_, i) => (
+          <circle
+            key={i}
+            className="snow-flake"
+            style={{ animationDelay: `${prand(i, 5) * 6}s`, animationDuration: `${5 + prand(i, 11) * 3}s` }}
+            cx={prand(i, 43) * 720}
+            cy={prand(i, 47) * 400}
+            r={2 + prand(i, 53) * 2.5}
+            fill="#FFFFFF"
+            opacity="0.85"
+          />
+        ))}
+
+      {/* 雾 */}
+      {kind === 'fog' &&
+        [0, 1, 2].map((i) => (
+          <ellipse
+            key={i}
+            className="fog-band"
+            style={{ animationDelay: `${i * -14}s` }}
+            cx={180 + i * 200}
+            cy={180 + i * 70}
+            rx={300}
+            ry={46}
+            fill="#E8ECF2"
+            opacity="0.3"
+          />
+        ))}
+
+      {/* 雷电闪光 */}
+      {kind === 'storm' && <rect className="lightning" width="720" height="400" fill="#FFFFFF" />}
     </svg>
   )
 }

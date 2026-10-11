@@ -1032,8 +1032,43 @@ textarea.input {
 }
 
 .scene-card {
+  position: relative;
   padding: 0;
   overflow: hidden;
+}
+
+.weather-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.weather-chip {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(4px);
+  color: #4a4a55;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+[data-theme='dark'] .weather-chip {
+  background: rgba(30, 32, 44, 0.6);
+  color: #e8e6df;
+}
+
+.weather-hint {
+  cursor: pointer;
+}
+
+.weather-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
 .desert-svg {
@@ -1044,6 +1079,100 @@ textarea.input {
 
 .desert-tree {
   animation: grow-in 0.7s ease;
+}
+
+/* ===== 沙漠天气与昼夜效果 ===== */
+.star {
+  animation: twinkle 3s ease-in-out infinite;
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.cloud {
+  animation: cloud-drift 30s ease-in-out infinite alternate;
+}
+
+@keyframes cloud-drift {
+  from {
+    transform: translateX(-50px);
+  }
+  to {
+    transform: translateX(50px);
+  }
+}
+
+.rain-drop {
+  animation: rain-fall 1s linear infinite;
+}
+
+@keyframes rain-fall {
+  from {
+    transform: translateY(-30px);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.65;
+  }
+  to {
+    transform: translateY(430px);
+    opacity: 0.4;
+  }
+}
+
+.snow-flake {
+  animation: snow-fall 6s linear infinite;
+}
+
+@keyframes snow-fall {
+  from {
+    transform: translateY(-20px) translateX(0);
+  }
+  50% {
+    transform: translateY(200px) translateX(14px);
+  }
+  to {
+    transform: translateY(430px) translateX(-10px);
+  }
+}
+
+.fog-band {
+  animation: fog-drift 40s ease-in-out infinite alternate;
+}
+
+@keyframes fog-drift {
+  from {
+    transform: translateX(-70px);
+  }
+  to {
+    transform: translateX(70px);
+  }
+}
+
+.lightning {
+  animation: lightning 5s linear infinite;
+}
+
+@keyframes lightning {
+  0%,
+  91%,
+  96%,
+  100% {
+    opacity: 0;
+  }
+  92% {
+    opacity: 0.6;
+  }
+  94% {
+    opacity: 0.12;
+  }
 }
 
 @keyframes grow-in {

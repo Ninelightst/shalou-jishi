@@ -115,7 +115,7 @@ function Shell() {
         {view === 'home' && <HomeView onNavigate={setView} onOpenSettings={() => setSettingsOpen(true)} />}
         {view === 'pagoda' && <PagodaView />}
         {view === 'report' && <ReportView />}
-        {view === 'desert' && <DesertView />}
+        {view === 'desert' && <DesertView onOpenSettings={() => setSettingsOpen(true)} />}
       </main>
 
       <nav className="bottom-nav">

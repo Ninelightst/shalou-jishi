@@ -45,6 +45,7 @@ export interface AppSettings {
   categories: Category[]
   timerPresets: number[] // 秒
   theme: 'light' | 'dark'
+  weatherCity?: { name: string; lat: number; lon: number } | null
 }
 
 export interface Tree {

@@ -5,6 +5,7 @@ import type { Category } from '../types'
 import { downloadText, exportAll, importAll } from '../utils/exportImport'
 import { formatPreset } from '../utils/time'
 import { todayStr } from '../utils/date'
+import { geocodeCity } from '../utils/weather'
 import { CloseIcon, DownloadIcon, MoonIcon, SunIcon, UploadIcon } from './Icons'
 
 export function SettingsModal({ onClose }: { onClose: () => void }) {
@@ -12,6 +13,8 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
   const [presetInput, setPresetInput] = useState('')
+  const [weatherInput, setWeatherInput] = useState('')
+  const [weatherMsg, setWeatherMsg] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
   if (!settings) return null
@@ -51,6 +54,40 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
       update({ timerPresets: [...settings!.timerPresets, seconds].sort((a, b) => a - b) })
     }
     setPresetInput('')
+  }
+
+  async function searchCity() {
+    const name = weatherInput.trim()
+    if (!name) return
+    setWeatherMsg('搜索中…')
+    try {
+      const c = await geocodeCity(name)
+      if (!c) {
+        setWeatherMsg('没找到这个城市，换个写法试试')
+        return
+      }
+      update({ weatherCity: c })
+      setWeatherMsg(`已设置：${c.name}。去沙漠页看看天气吧`)
+      setWeatherInput('')
+    } catch {
+      setWeatherMsg('搜索失败，请检查网络')
+    }
+  }
+
+  function useMyLocation() {
+    if (!navigator.geolocation) {
+      setWeatherMsg('此设备不支持定位')
+      return
+    }
+    setWeatherMsg('定位中…')
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        update({ weatherCity: { name: '当前位置', lat: pos.coords.latitude, lon: pos.coords.longitude } })
+        setWeatherMsg('已设置：当前位置')
+      },
+      () => setWeatherMsg('定位失败，请手动搜索城市'),
+      { timeout: 10000 },
+    )
   }
 
   async function doExport() {
@@ -167,6 +204,44 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                 添加预设
               </button>
             </div>
+          </section>
+
+          <section className="set-section">
+            <h4>天气（沙漠页）</h4>
+            {settings.weatherCity ? (
+              <div className="weather-row">
+                <span className="hint">
+                  已设置：{settings.weatherCity.name}
+                  {settings.weatherCity.name !== '当前位置' &&
+                    `（${settings.weatherCity.lat.toFixed(2)}, ${settings.weatherCity.lon.toFixed(2)}）`}
+                </span>
+                <button type="button" className="btn btn-sm" onClick={() => update({ weatherCity: null })}>
+                  清除
+                </button>
+              </div>
+            ) : (
+              <p className="hint">沙漠场景会随真实天气变化：晴、雨、雪、雾、雷暴……</p>
+            )}
+            <div className="preset-add">
+              <input
+                className="input"
+                placeholder="输入城市名，如：杭州"
+                value={weatherInput}
+                onChange={(e) => setWeatherInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') void searchCity()
+                }}
+              />
+              <button type="button" className="btn btn-sm" onClick={() => void searchCity()}>
+                搜索
+              </button>
+            </div>
+            <div className="preset-add" style={{ marginTop: 8 }}>
+              <button type="button" className="btn btn-sm" onClick={useMyLocation}>
+                📍 使用当前位置
+              </button>
+            </div>
+            {weatherMsg && <div className="form-msg">{weatherMsg}</div>}
           </section>
 
           <section className="set-section">

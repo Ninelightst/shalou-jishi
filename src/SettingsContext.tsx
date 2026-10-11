@@ -13,7 +13,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<AppSettings | null>(null)
 
   useEffect(() => {
-    void loadSettings().then(setSettings)
+    void loadSettings().then((s) => {
+      localStorage.setItem('hourglass-theme', s.theme)
+      setSettings(s)
+    })
   }, [])
 
   const update = (patch: Partial<AppSettings>) => {
@@ -21,6 +24,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       if (!prev) return prev
       const next = { ...prev, ...patch }
       void saveSettings(next)
+      if (patch.theme) localStorage.setItem('hourglass-theme', next.theme)
       return next
     })
   }

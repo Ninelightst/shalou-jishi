@@ -13,12 +13,46 @@ import {
 import { DesertScene, desertStage } from '../components/DesertScene'
 import { HourglassLogo } from '../components/HourglassLogo'
 import { CloseIcon } from '../components/Icons'
+import { useNow } from '../hooks/useNow'
+import { useSettings } from '../SettingsContext'
+import { fetchWeather, loadWeatherCache, WMO_LABEL, type WeatherNow } from '../utils/weather'
 
-export function DesertView() {
+export function DesertView({ onOpenSettings }: { onOpenSettings: () => void }) {
+  const { settings } = useSettings()
   const [game, setGame] = useState<GameState | null>(null)
   const gameRef = useRef<GameState | null>(null)
   const [pour, setPour] = useState(-1) // -1 空闲，0~1 倒沙动画进度
   const [shopOpen, setShopOpen] = useState(false)
+
+  // 昼夜：每分钟刷新一次当前小时
+  const now = useNow(true, 60000)
+  const hour = new Date(now).getHours()
+
+  // 天气：读取缓存兜底，设了城市后拉取并每 30 分钟刷新
+  const [weather, setWeather] = useState<WeatherNow | null>(() => loadWeatherCache())
+  const city = settings?.weatherCity ?? null
+  useEffect(() => {
+    if (!city) return
+    let alive = true
+    const refresh = () => {
+      void fetchWeather(city).then((d) => {
+        if (alive) setWeather(d)
+      }).catch(() => {
+        /* 保持缓存数据 */
+      })
+    }
+    refresh()
+    const id = setInterval(refresh, 30 * 60 * 1000)
+    const onVis = () => {
+      if (document.visibilityState === 'visible') refresh()
+    }
+    document.addEventListener('visibilitychange', onVis)
+    return () => {
+      alive = false
+      clearInterval(id)
+      document.removeEventListener('visibilitychange', onVis)
+    }
+  }, [city])
 
   useEffect(() => {
     void loadGame().then((g) => {
@@ -98,7 +132,18 @@ export function DesertView() {
       </div>
 
       <div className="card scene-card">
-        <DesertScene sandPoured={game.sandPoured} moisture={game.moisture} trees={game.trees} />
+        <DesertScene sandPoured={game.sandPoured} moisture={game.moisture} trees={game.trees} hour={hour} weather={weather} />
+        <div className="weather-badge">
+          {city ? (
+            <span className="weather-chip">
+              {weather ? `🌤 ${weather.city} · ${weather.temp}° · ${WMO_LABEL[weather.code] ?? '未知'}` : '天气获取中…'}
+            </span>
+          ) : (
+            <button type="button" className="weather-chip weather-hint" onClick={onOpenSettings}>
+              ☁ 设置城市，看真实天气
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="desert-stats">
