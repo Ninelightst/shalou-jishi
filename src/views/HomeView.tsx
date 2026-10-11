@@ -55,7 +55,7 @@ export function HomeView({
 
       <div className="home-hero">
         <HourglassLogo size={132} progress={(now % 60000) / 60000} className="hero-logo" />
-        <div className="version-badge">v1.3</div>
+        <div className="version-badge">v1.4</div>
       </div>
 
       {active && (

@@ -38,6 +38,11 @@ body,
   height: 100%;
 }
 
+html {
+  /* 下拉/回弹露出区域与页面背景一致，避免频闪 */
+  background: var(--bg);
+}
+
 body {
   font-family:
     -apple-system,
@@ -51,6 +56,8 @@ body {
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
+  /* 禁用下拉回弹露出窗口底色，App 手感 */
+  overscroll-behavior-y: none;
 }
 
 button {

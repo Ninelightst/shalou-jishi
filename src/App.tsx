@@ -31,9 +31,13 @@ function Shell() {
   const lastDayRef = useRef(todayStr())
   const autoToastTimer = useRef<number | undefined>(undefined)
 
-  // 主题
+  // 主题：同步根节点属性与 Android 窗口主题色（避免下拉时露出黑色背景）
   useEffect(() => {
-    if (settings) document.documentElement.dataset.theme = settings.theme
+    if (!settings) return
+    document.documentElement.dataset.theme = settings.theme
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute('content', settings.theme === 'dark' ? '#1C1D26' : '#F7F5F0')
   }, [settings?.theme])
 
   // 日程到点自动完成：发放奖励并提示
