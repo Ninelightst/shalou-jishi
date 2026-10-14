@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
 import { useSettings } from '../SettingsContext'
 import { useTimerApi } from '../TimerContext'
+import { useNow } from '../hooks/useNow'
 import { HourglassLogo } from '../components/HourglassLogo'
 import { CategoryBar } from '../components/CategoryBar'
 import { ChartIcon, ChevronRightIcon, ClockIcon, GearIcon, TreeIcon } from '../components/Icons'
@@ -19,6 +20,7 @@ export function HomeView({
 }) {
   const timer = useTimerApi()
   const { settings } = useSettings()
+  const now = useNow(true, 1000)
   const t = todayStr()
 
   const [events, sessions] =
@@ -53,8 +55,7 @@ export function HomeView({
       </div>
 
       <div className="home-hero">
-        {/* 静态经典造型：沙满上腔，无漏沙 */}
-        <HourglassLogo size={132} progress={0} className="hero-logo" />
+        <HourglassLogo size={132} progress={(now % 60000) / 60000} className="hero-logo" />
       </div>
 
       {active && (
